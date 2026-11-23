@@ -1,0 +1,9 @@
+# Secrets und lokale Daten
+.env
+*.env
+.vs/
+__pycache__/
+*.pyc
+
+# Laufzeitdaten des Scanners (werden auf dem Host erzeugt)
+network-scanner/data/network-export.csv

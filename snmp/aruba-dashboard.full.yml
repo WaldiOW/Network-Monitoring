@@ -1,0 +1,189 @@
+auths:
+  public_v2:
+    community: public
+    version: 2
+  monitoring_ro_v2:
+    community: monitoring_ro
+    version: 2
+
+modules:
+  if_mib:
+    walk:
+      - 1.3.6.1.2.1.2.2.1
+      - 1.3.6.1.2.1.31.1.1.1
+    get:
+      - 1.3.6.1.2.1.1.3.0
+    metrics:
+      - name: sysUpTime
+        oid: 1.3.6.1.2.1.1.3
+        type: gauge
+        help: System uptime
+
+      - name: ifIndex
+        oid: 1.3.6.1.2.1.2.2.1.1
+        type: gauge
+        help: Interface index
+        indexes:
+          - labelname: ifIndex
+            type: gauge
+
+      - name: ifDescr
+        oid: 1.3.6.1.2.1.2.2.1.2
+        type: DisplayString
+        help: Interface description
+        indexes:
+          - labelname: ifIndex
+            type: gauge
+
+      - name: ifInOctets
+        oid: 1.3.6.1.2.1.2.2.1.10
+        type: counter
+        help: Octets received on the interface
+        indexes:
+          - labelname: ifIndex
+            type: gauge
+
+      - name: ifOutOctets
+        oid: 1.3.6.1.2.1.2.2.1.16
+        type: counter
+        help: Octets sent on the interface
+        indexes:
+          - labelname: ifIndex
+            type: gauge
+
+      - name: ifSpeed
+        oid: 1.3.6.1.2.1.2.2.1.5
+        type: gauge
+        help: Interface speed in bits per second
+        indexes:
+          - labelname: ifIndex
+            type: gauge
+
+      - name: ifHCInOctets
+        oid: 1.3.6.1.2.1.31.1.1.1.6
+        type: counter
+        help: High capacity octets received
+        indexes:
+          - labelname: ifIndex
+            type: gauge
+
+      - name: ifHCOutOctets
+        oid: 1.3.6.1.2.1.31.1.1.1.10
+        type: counter
+        help: High capacity octets sent
+        indexes:
+          - labelname: ifIndex
+            type: gauge
+
+      - name: ifAlias
+        oid: 1.3.6.1.2.1.31.1.1.1.18
+        type: DisplayString
+        help: Interface alias
+        indexes:
+          - labelname: ifIndex
+            type: gauge
+
+  aruba_dashboard:
+    walk:
+      - 1.3.6.1.4.1.14823.2.3.3.1.2.1
+      - 1.3.6.1.4.1.14823.2.3.3.1.2.2
+    metrics:
+      - name: aruba_ap_name
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.1.1.2
+        type: DisplayString
+        help: Aruba AP name
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+
+      - name: aruba_ap_ip
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.1.1.3
+        type: DisplayString
+        help: Aruba AP IP
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+
+      - name: aruba_ap_serial
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.1.1.4
+        type: DisplayString
+        help: Aruba AP serial
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+
+      - name: aruba_ap_model
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.1.1.6
+        type: DisplayString
+        help: Aruba AP model
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+
+      - name: aruba_ap_clients
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.1.1.7
+        type: gauge
+        help: Aruba AP clients (AP table)
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+
+      - name: aruba_radio_channel
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.2.1.3
+        type: DisplayString
+        help: Aruba radio channel
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+          - labelname: radio
+            type: gauge
+
+      - name: aruba_radio_power_dbm
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.2.1.5
+        type: gauge
+        help: Aruba radio tx power dBm
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+          - labelname: radio
+            type: gauge
+
+      - name: aruba_radio_noise_dbm
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.2.1.6
+        type: gauge
+        help: Aruba radio noise dBm
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+          - labelname: radio
+            type: gauge
+
+      - name: aruba_radio_utilization_percent
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.2.1.7
+        type: gauge
+        help: Aruba radio utilization percent
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+          - labelname: radio
+            type: gauge
+
+      - name: aruba_radio_clients
+        oid: 1.3.6.1.4.1.14823.2.3.3.1.2.2.1.8
+        type: gauge
+        help: Aruba radio clients (per radio)
+        indexes:
+          - labelname: apMac
+            type: OctetString
+            fixed_size: 6
+          - labelname: radio
+            type: gauge

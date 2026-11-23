@@ -1,0 +1,463 @@
+{
+  "__inputs__": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Funk 0 - 5 GHz",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Leistung (dBm)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 6
+                    },
+                    {
+                      "color": "green",
+                      "value": 12
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Auslastung (%)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 25
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rauschen (dBm)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": -89
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "enablePagination": true
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Name"
+          }
+        ]
+      },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "expr": "max by (apKey, aruba_ap_name) (label_replace(aruba_ap_name{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "B", "format": "table", "instant": true, "expr": "max by (apKey, aruba_ap_ip) (label_replace(aruba_ap_ip{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "C", "format": "table", "instant": true, "expr": "max by (apKey) (label_replace(aruba_ap_clients{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "D", "format": "table", "instant": true, "expr": "max by (apKey, aruba_ap_model) (label_replace(aruba_ap_model{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "E", "format": "table", "instant": true, "expr": "max by (apKey, aruba_ap_serial) (label_replace(aruba_ap_serial{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "F", "format": "table", "instant": true, "expr": "max by (apKey, aruba_radio_channel) (label_replace(aruba_radio_channel{job=\"aruba-wifi-dashboard\",aruba_radio_channel=~\"^(36|44|52|60|100|108|116|124|132|149|153|157|161|165)$\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "G", "format": "table", "instant": true, "expr": "max by (apKey) (label_replace(aruba_radio_power_dbm{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\") and on (apKey) label_replace(aruba_radio_channel{job=\"aruba-wifi-dashboard\",aruba_radio_channel=~\"^(36|44|52|60|100|108|116|124|132|149|153|157|161|165)$\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "H", "format": "table", "instant": true, "expr": "max by (apKey) (label_replace(aruba_radio_utilization_percent{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\") and on (apKey) label_replace(aruba_radio_channel{job=\"aruba-wifi-dashboard\",aruba_radio_channel=~\"^(36|44|52|60|100|108|116|124|132|149|153|157|161|165)$\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "I", "format": "table", "instant": true, "expr": "-1 * max by (apKey) (label_replace(aruba_radio_noise_dbm{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\") and on (apKey) label_replace(aruba_radio_channel{job=\"aruba-wifi-dashboard\",aruba_radio_channel=~\"^(36|44|52|60|100|108|116|124|132|149|153|157|161|165)$\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "apKey",
+            "mode": "inner"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value #A": true,
+              "Value #B": true,
+              "Value #C": false,
+              "Value #D": true,
+              "Value #E": true,
+              "Value #F": true,
+              "Value #G": false,
+              "Value #H": false,
+              "Value #I": false,
+              "apKey": true,
+              "apMac": true,
+              "__name__": true,
+              "device_type": true,
+              "instance": true,
+              "job": true,
+              "module": true,
+              "name": true,
+              "radio": true
+            },
+            "indexByName": {
+              "aruba_ap_name": 0,
+              "aruba_ap_ip": 1,
+              "Value #C": 2,
+              "aruba_ap_model": 3,
+              "aruba_ap_serial": 4,
+              "aruba_radio_channel": 5,
+              "Value #G": 6,
+              "Value #H": 7,
+              "Value #I": 8
+            },
+            "renameByName": {
+              "aruba_ap_name": "Name",
+              "aruba_ap_ip": "IP-Adresse",
+              "Value #C": "Clients (ungeprüft)",
+              "aruba_ap_model": "Typ",
+              "aruba_ap_serial": "Seriennummer",
+              "aruba_radio_channel": "Kanal",
+              "Value #G": "Leistung (dBm)",
+              "Value #H": "Auslastung (%)",
+              "Value #I": "Rauschen (dBm)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Funk 1 - 2,4 GHz",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Leistung (dBm)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 3
+                    },
+                    {
+                      "color": "green",
+                      "value": 9
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Auslastung (%)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 25
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rauschen (dBm)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": -89
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "enablePagination": true
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Name"
+          }
+        ]
+      },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "expr": "max by (apKey, aruba_ap_name) (label_replace(aruba_ap_name{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "B", "format": "table", "instant": true, "expr": "max by (apKey, aruba_ap_ip) (label_replace(aruba_ap_ip{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "C", "format": "table", "instant": true, "expr": "max by (apKey) (label_replace(aruba_ap_clients{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "D", "format": "table", "instant": true, "expr": "max by (apKey, aruba_ap_model) (label_replace(aruba_ap_model{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "E", "format": "table", "instant": true, "expr": "max by (apKey, aruba_ap_serial) (label_replace(aruba_ap_serial{job=\"aruba-wifi-dashboard\"}, \"apKey\", \"$1\", \"apMac\", \"^(0x[0-9A-Fa-f]{12}).*\"))" },
+        { "refId": "F", "format": "table", "instant": true, "expr": "max by (apKey, aruba_radio_channel) (label_replace(aruba_radio_channel{job=\"aruba-wifi-dashboard\",aruba_radio_channel=~\"^(1|6|11)$\"}, \"apKey\", \"${1}00\", \"apMac\", \"^(0x[0-9A-Fa-f]{10})[0-9A-Fa-f]{2}.*\"))" },
+        { "refId": "G", "format": "table", "instant": true, "expr": "max by (apKey) (label_replace((aruba_radio_power_dbm{job=\"aruba-wifi-dashboard\"} and on (apMac) aruba_radio_channel{job=\"aruba-wifi-dashboard\",aruba_radio_channel=~\"^(1|6|11)$\"}), \"apKey\", \"${1}00\", \"apMac\", \"^(0x[0-9A-Fa-f]{10})[0-9A-Fa-f]{2}.*\"))" },
+        { "refId": "H", "format": "table", "instant": true, "expr": "max by (apKey) (label_replace((aruba_radio_utilization_percent{job=\"aruba-wifi-dashboard\"} and on (apMac) aruba_radio_channel{job=\"aruba-wifi-dashboard\",aruba_radio_channel=~\"^(1|6|11)$\"}), \"apKey\", \"${1}00\", \"apMac\", \"^(0x[0-9A-Fa-f]{10})[0-9A-Fa-f]{2}.*\"))" },
+        { "refId": "I", "format": "table", "instant": true, "expr": "-1 * max by (apKey) (label_replace((aruba_radio_noise_dbm{job=\"aruba-wifi-dashboard\"} and on (apMac) aruba_radio_channel{job=\"aruba-wifi-dashboard\",aruba_radio_channel=~\"^(1|6|11)$\"}), \"apKey\", \"${1}00\", \"apMac\", \"^(0x[0-9A-Fa-f]{10})[0-9A-Fa-f]{2}.*\"))" }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "apKey",
+            "mode": "inner"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value #A": true,
+              "Value #B": true,
+              "Value #C": false,
+              "Value #D": true,
+              "Value #E": true,
+              "Value #F": true,
+              "Value #G": false,
+              "Value #H": false,
+              "Value #I": false,
+              "apKey": true,
+              "apMac": true,
+              "__name__": true,
+              "device_type": true,
+              "instance": true,
+              "job": true,
+              "module": true,
+              "name": true,
+              "radio": true
+            },
+            "indexByName": {
+              "aruba_ap_name": 0,
+              "aruba_ap_ip": 1,
+              "Value #C": 2,
+              "aruba_ap_model": 3,
+              "aruba_ap_serial": 4,
+              "aruba_radio_channel": 5,
+              "Value #G": 6,
+              "Value #H": 7,
+              "Value #I": 8
+            },
+            "renameByName": {
+              "aruba_ap_name": "Name",
+              "aruba_ap_ip": "IP-Adresse",
+              "Value #C": "Clients (ungeprüft)",
+              "aruba_ap_model": "Typ",
+              "aruba_ap_serial": "Seriennummer",
+              "aruba_radio_channel": "Kanal",
+              "Value #G": "Leistung (dBm)",
+              "Value #H": "Auslastung (%)",
+              "Value #I": "Rauschen (dBm)"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 42,
+  "tags": [
+    "aruba",
+    "wlan",
+    "radio"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Aruba WLAN Funkdaten",
+  "uid": "aruba-wifi-radio-table",
+  "version": 1
+}

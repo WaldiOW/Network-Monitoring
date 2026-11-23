@@ -1,0 +1,22 @@
+services:
+  network-scanner:
+    build: .
+    container_name: network-scanner-test
+    network_mode: host
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    environment:
+      TZ: Europe/Berlin
+      SCAN_SUBNET: 192.168.1.0/24
+      SCAN_TIMES: "06:00,18:00"
+      RUN_ON_START: "true"
+      METRICS_PORT: "9200"
+      DATA_DIR: /data
+      MIKROTIK_HOST: ${MIKROTIK_HOST}
+      MIKROTIK_USER: ${MIKROTIK_USER}
+      MIKROTIK_PASS: ${MIKROTIK_PASS}
+      SNMP_COMMUNITY: ${SNMP_COMMUNITY}
+    volumes:
+      - ./data:/data
+    restart: unless-stopped

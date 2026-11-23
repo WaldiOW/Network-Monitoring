@@ -1,0 +1,18 @@
+from,to,typ
+Modem,router.lan,WAN
+Modem,Internet,WAN
+router.lan,Mainswitch,LAN
+Mainswitch,Barraum,LAN
+Mainswitch,Legozimmer,LAN
+Mainswitch,Switch Groundfloor,Uplink
+Switch Groundfloor,Stiegenhaus,LAN
+Switch Groundfloor,Top 1-2,LAN
+Switch Groundfloor,Top 3-4,LAN
+Switch Groundfloor,Switch 1st floor,Uplink
+Switch 1st floor,Top 5,LAN
+Switch 1st floor,Top 6,LAN
+Switch 1st floor,Switch 3 floor,Uplink
+Switch 3 floor,Top 9,LAN
+Switch 3 floor,Top 10,LAN
+Switch 3 floor,Switch Top9 Desk,Uplink
+Switch Top9 Desk,HPID87F36,LAN
