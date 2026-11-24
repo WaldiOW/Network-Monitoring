@@ -1,0 +1,48 @@
+{
+  "uid": "network-topology",
+  "title": "Netzwerktopologie",
+  "tags": ["network", "scanner", "topology"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5m",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "nodeGraph",
+      "title": "Netzwerktopologie",
+      "gridPos": { "h": 20, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "network_link_info",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        { "id": "organize", "options": {
+          "excludeByName": { "Time": true, "Value": true, "__name__": true, "instance": true, "job": true },
+          "renameByName": { "from": "source", "to": "target", "typ": "mainStat" }
+        } }
+      ],
+      "options": {
+        "zoomMode": "cooperative"
+      }
+    }
+  ]
+}

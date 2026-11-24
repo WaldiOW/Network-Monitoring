@@ -1,0 +1,10 @@
+services:
+  aruba-client-exporter:
+    build: .
+    image: aruba-client-exporter
+    container_name: aruba-client-exporter
+    ports:
+      - "9118:9118"
+    env_file:
+      - .env
+    restart: unless-stopped
