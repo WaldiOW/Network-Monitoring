@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Netzwerktopologie</title>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; background: radial-gradient(ellipse at top, #1a2030 0%, #0f1115 60%); color: #d8d9da; font-family: 'Ink Free', 'Inkfree', Arial, sans-serif; font-size: 12.8px; }
+  #bar { padding: 8px 12px; display: flex; gap: 12px; align-items: center; background: linear-gradient(90deg, #1a1d23, #202634); border-bottom: 1px solid #2f3645; box-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+  #bar strong { color: #ffffff; text-shadow: 0 0 8px rgba(87,148,242,0.6); }
+  #bar input { width: 300px; padding: 4px 6px; background: #111217; color: #d8d9da; border: 1px solid #3a4150; border-radius: 4px; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; }
+  #bar input:focus { outline: none; border-color: #5794f2; box-shadow: 0 0 0 2px rgba(87,148,242,0.25); }
+  #bar button, #popup button { padding: 4px 10px; cursor: pointer; font-family: inherit; color: #d8d9da; background: #262c38; border: 1px solid #3a4150; border-radius: 4px; transition: background 0.2s, box-shadow 0.2s, transform 0.1s; }
+  #bar button:hover, #popup button:hover { background: #2f3747; box-shadow: 0 0 8px rgba(87,148,242,0.4); }
+  #bar button:active, #popup button:active { transform: scale(0.97); }
+  #status { font-size: 10.4px; opacity: 0.8; display: inline-flex; align-items: center; gap: 6px; }
+  #status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #73bf69; box-shadow: 0 0 6px #73bf69; animation: pulse 2s infinite; }
+  #status.busy::before { background: #ff9830; box-shadow: 0 0 6px #ff9830; }
+  #status.error::before { background: #f2495c; box-shadow: 0 0 6px #f2495c; }
+  #title3d { position: fixed; top: 50px; left: 0; right: 0; text-align: center; pointer-events: none; z-index: 10; font-size: 34px; font-weight: bold; color: #ffffff; letter-spacing: 2px; text-shadow: 0 1px 0 #3a4a6b, 0 2px 0 #34415e, 0 3px 0 #2c3650, 0 4px 0 #242d44, 0 8px 14px rgba(0,0,0,0.8); }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.35; } 100% { opacity: 1; } }
+  #net { position: relative; width: 100%; height: calc(100% - 44px); }
+  #popup { position: fixed; top: 76px; right: 16px; display: none; min-width: 300px; max-width: 360px; max-height: calc(100vh - 100px); overflow-y: auto; padding: 12px 14px; background: rgba(17,21,30,0.96); border: 1px solid #3a4150; border-radius: 6px; box-shadow: 0 6px 24px rgba(0,0,0,0.6); z-index: 20; font-size: 13px; line-height: 1.5; }
+  #popup h3 { margin: 0 0 8px 0; font-size: 15px; color: #ffffff; }
+  #popup .row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 2px 0; border-bottom: 1px dotted #2a303c; }
+  #popup .row span { opacity: 0.7; white-space: nowrap; }
+  #popup .row b { font-weight: normal; text-align: right; word-break: break-word; }
+  #popup .sec { margin-top: 10px; padding-top: 6px; border-top: 1px solid #3a4150; font-weight: bold; color: #73bf69; text-shadow: 0 0 6px rgba(115,191,105,0.5); }
+  #popup .close { float: right; background: none; border: none; color: #d8d9da; font-size: 14px; cursor: pointer; }
+  #popup .actions { margin-top: 10px; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <strong>Netzwerktopologie</strong>
+  <label>Prometheus-URL: <input id="promUrl" value="http://192.168.1.8:9090"></label>
+  <button id="reload">Aktualisieren</button>
+  <span id="status">Lade ...</span>
+</div>
+<div id="title3d">Columbusgasse</div>
+<div id="net"></div>
+<div id="popup"></div>
+
+<script>
+const EDGE_COLORS = { WAN: "#5794f2", LAN: "#73bf69", Uplink: "#ff9830" };
+const COL_PARENT = "#5794f2";
+const COL_LEAF = "#73bf69";
+const COL_INTERNET = "#b8860b";
+const COL_DOWN = "#FF3030";
+const COL_DOWN_DIM = "#4a1414";
+let blinkOn = false;
+const W_PARENT = 300;
+const W_LEAF = 120;
+const Y_INTERNET = -260;
+const Y_LEAF = 260;
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const lc = s => String(s ?? "").trim().toLowerCase();
+
+function kindOf(name) {
+  if (name === "Internet") return "internet";
+  if (/HP|printer|drucker/i.test(name)) return "printer";
+  if (/modem|router/i.test(name)) return "router";
+  if (/switch/i.test(name)) return "switch";
+  return "ap";
+}
+
+function icon(kind) {
+  let body = "";
+  if (kind === "internet") {
+    body = '<circle cx="32" cy="32" r="22" fill="none" stroke="#ffd54f" stroke-width="3"/>' +
+      '<ellipse cx="32" cy="32" rx="10" ry="22" fill="none" stroke="#ffd54f" stroke-width="2"/>' +
+      '<line x1="10" y1="32" x2="54" y2="32" stroke="#ffd54f" stroke-width="2"/>' +
+      '<line x1="14" y1="20" x2="50" y2="20" stroke="#ffd54f" stroke-width="2"/>' +
+      '<line x1="14" y1="44" x2="50" y2="44" stroke="#ffd54f" stroke-width="2"/>';
+  } else if (kind === "router") {
+    body = '<line x1="22" y1="32" x2="18" y2="10" stroke="#5794f2" stroke-width="3"/>' +
+      '<line x1="42" y1="32" x2="46" y2="10" stroke="#5794f2" stroke-width="3"/>' +
+      '<rect x="8" y="32" width="48" height="16" rx="3" fill="#1f2a44" stroke="#5794f2" stroke-width="2"/>' +
+      '<circle cx="16" cy="40" r="2" fill="#73bf69"/><circle cx="23" cy="40" r="2" fill="#ff9830"/>' +
+      '<rect x="30" y="37" width="20" height="6" fill="#5794f2"/>';
+  } else if (kind === "switch") {
+    let ports = "";
+    for (let i = 0; i < 8; i++) ports += '<rect x="' + (11 + i * 5.5) + '" y="34" width="4" height="6" fill="#73bf69"/>';
+    body = '<rect x="6" y="24" width="52" height="18" rx="3" fill="#1f2a44" stroke="#5794f2" stroke-width="2"/>' + ports;
+  } else if (kind === "printer") {
+    body = '<rect x="18" y="10" width="28" height="14" fill="#fff" stroke="#ccc"/>' +
+      '<rect x="8" y="24" width="48" height="20" rx="4" fill="#1f2a44" stroke="#73bf69" stroke-width="2"/>' +
+      '<rect x="18" y="38" width="28" height="14" fill="#fff" stroke="#ccc"/>';
+  } else {
+    body = '<path d="M8 44 Q32 4 56 44 Z" fill="#1f2a44" stroke="#73bf69" stroke-width="2"/>' +
+      '<circle cx="32" cy="44" r="4" fill="#73bf69"/>' +
+      '<path d="M18 52 Q32 42 46 52" fill="none" stroke="#73bf69" stroke-width="2"/>' +
+      '<path d="M12 58 Q32 48 52 58" fill="none" stroke="#73bf69" stroke-width="2"/>';
+  }
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' + body + '</svg>';
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+const nodesDS = new vis.DataSet();
+const edgesDS = new vis.DataSet();
+const netContainer = document.getElementById("net");
+const popup = document.getElementById("popup");
+const network = new vis.Network(
+  netContainer,
+  { nodes: nodesDS, edges: edgesDS },
+  {
+    physics: false,
+    layout: { hierarchical: false },
+    nodes: {
+      shape: "circularImage",
+      size: 34,
+      borderWidth: 3,
+      color: { background: "#1b1e24" },
+      font: { color: "#e0e0e0", size: 13.4, face: "Ink Free, Inkfree, Arial, sans-serif" },
+      shadow: { enabled: true, color: "rgba(0,0,0,0.6)", size: 10 }
+    },
+    edges: {
+      width: 2,
+      smooth: { type: "cubicBezier", roundness: 0.3 },
+      arrows: { to: { enabled: true, scaleFactor: 0.6 } },
+      font: { color: "#aaa", size: 8.8, strokeWidth: 0, align: "middle", face: "Ink Free, Inkfree, Arial, sans-serif" }
+    },
+    interaction: { hover: true }
+  }
+);
+
+let model = { order: [], edges: [] };
+let details = { devByName: {}, macByAp: {}, apDetails: {} };
+const collapsed = new Set();
+
+async function query(base, expr) {
+  const res = await fetch(base + "/api/v1/query?query=" + encodeURIComponent(expr));
+  const json = await res.json();
+  if (json.status !== "success") throw new Error(json.error || "Abfrage fehlgeschlagen: " + expr);
+  return json.data.result;
+}
+
+async function loadTopology() {
+  const base = document.getElementById("promUrl").value.replace(/\/$/, "");
+  const status = document.getElementById("status");
+  status.textContent = "Lade ...";
+  try {
+    const [links, devInfo, devUp, apName, apClients, rChan, rUtil, rNoise, rPower, rClients] = await Promise.all([
+      query(base, "network_link_info"),
+      query(base, "network_device_info"),
+      query(base, "network_device_up"),
+      query(base, "aruba_ap_name"),
+      query(base, "aruba_clients_per_ap"),
+      query(base, "aruba_radio_channel"),
+      query(base, "aruba_radio_utilization_percent"),
+      query(base, "aruba_radio_noise_dbm"),
+      query(base, "aruba_radio_power_dbm"),
+      query(base, "aruba_radio_clients")
+    ]);
+    model = buildModel(links);
+    details = buildDetails({ devInfo, devUp, apName, apClients, rChan, rUtil, rNoise, rPower, rClients });
+    hidePopup();
+    render();
+    status.textContent = model.edges.length + " Verbindungen, Stand " + new Date().toLocaleTimeString("de-DE");
+  } catch (err) {
+    status.textContent = "Fehler: " + err.message + " (URL oder CORS prüfen)";
+  }
+}
+
+function buildModel(result) {
+  const order = [];
+  const edges = result.map(r => {
+    const m = r.metric;
+    [m.from, m.to].forEach(n => { if (!order.includes(n)) order.push(n); });
+    return { from: m.from, to: m.to, typ: m.typ || "" };
+  });
+  return { order, edges };
+}
+
+function buildDetails(d) {
+  const upByIp = {};
+  d.devUp.forEach(r => { upByIp[r.metric.ip] = Number(r.value[1]); });
+
+  const devByName = {};
+  d.devInfo.forEach(r => {
+    const m = r.metric;
+    devByName[lc(m.name)] = { ip: m.ip, mac: m.mac, type: m.device_type, vendor: m.vendor, up: upByIp[m.ip] };
+  });
+
+  const macByAp = {};
+  d.apName.forEach(r => { macByAp[lc(r.metric.aruba_ap_name)] = r.metric.apMac; });
+
+  const apDetails = {};
+  const ensure = mac => apDetails[mac] = apDetails[mac] || { clients: null, radios: {} };
+  const radio = (r) => (ensure(r.metric.apMac).radios[r.metric.radio] = ensure(r.metric.apMac).radios[r.metric.radio] || {});
+
+  d.apClients.forEach(r => { ensure(r.metric.apMac).clients = Number(r.value[1]); });
+  d.rChan.forEach(r => { radio(r).channel = r.metric.aruba_radio_channel; });
+  d.rUtil.forEach(r => { radio(r).util = Number(r.value[1]); });
+  d.rNoise.forEach(r => { radio(r).noise = Number(r.value[1]); });
+  d.rPower.forEach(r => { radio(r).power = Number(r.value[1]); });
+  d.rClients.forEach(r => { radio(r).clients = Number(r.value[1]); });
+  return { devByName, macByAp, apDetails };
+}
+
+function row(key, value) {
+  return "<div class='row'><span>" + esc(key) + "</span><b>" + esc(value ?? "-") + "</b></div>";
+}
+
+function fmt(value, unit) {
+  return value == null || Number.isNaN(value) ? "-" : value + unit;
+}
+
+function showPopup(id) {
+  const key = lc(id);
+  const dev = details.devByName[key];
+  const apMac = details.macByAp[key];
+  const ap = apMac ? details.apDetails[apMac] : null;
+
+  let html = "<button class='close' id='pClose'>×</button><h3>" + esc(id) + "</h3>";
+  if (dev) {
+    const status = dev.up === 1 ? "Online" : dev.up === 0 ? "Offline" : "unbekannt";
+    html += row("Status", status) + row("IP", dev.ip) + row("MAC", dev.mac) + row("Typ", dev.type) + row("Hersteller", dev.vendor);
+  }
+  if (ap) {
+    html += row("Clients gesamt", ap.clients);
+    const bandName = { "0": "5 GHz", "1": "2.4 GHz" };
+    Object.keys(ap.radios).sort().forEach(rn => {
+      const r = ap.radios[rn];
+      html += "<div class='sec'>" + esc(bandName[rn] || ("Radio " + rn)) + "</div>" +
+        row("Kanal", r.channel) +
+        row("Auslastung", fmt(r.util, " %")) +
+        row("Rauschen", fmt(r.noise, " dBm")) +
+        row("Leistung", fmt(r.power, " dBm")) +
+        row("Clients", ap.clients);
+    });
+  }
+  if (!dev && !ap) html += "<p>Keine Detaildaten vorhanden.</p>";
+  html += "<div class='actions'><button id='pToggle'>Ein-/Ausklappen</button></div>";
+
+  popup.innerHTML = html;
+  popup.querySelector("#pClose").onclick = hidePopup;
+  popup.querySelector("#pToggle").onclick = () => { toggle(id); };
+
+  popup.style.display = "block";
+  popupOpen = true;
+}
+
+function hidePopup() {
+  popupOpen = false;
+  popup.style.display = "none";
+}
+
+function toggle(id) {
+  if (collapsed.has(id)) collapsed.delete(id); else collapsed.add(id);
+  render();
+  showPopup(id);
+}
+
+function render() {
+  const children = {};
+  const parentOf = {};
+  model.edges.forEach(e => {
+    (children[e.from] = children[e.from] || []).push(e);
+    parentOf[e.to] = e.from;
+  });
+  const isParent = id => !!children[id];
+
+  const visible = [];
+  const visEdges = [];
+  const queue = model.order.filter(n => !(n in parentOf));
+  while (queue.length) {
+    const id = queue.shift();
+    if (visible.includes(id)) continue;
+    visible.push(id);
+    if (collapsed.has(id)) continue;
+    (children[id] || []).forEach(e => { visEdges.push(e); queue.push(e.to); });
+  }
+
+  const parents = visible.filter(id => isParent(id));
+  const leaves = visible.filter(id => !isParent(id) && id !== "Internet");
+  const pos = {};
+
+  parents.forEach((id, i) => { pos[id] = { x: (i - (parents.length - 1) / 2) * W_PARENT, y: 0 }; });
+
+  const groups = {};
+  leaves.forEach(id => { (groups[parentOf[id]] = groups[parentOf[id]] || []).push(id); });
+  Object.keys(groups).forEach(p => {
+    const ids = groups[p];
+    ids.forEach((id, j) => { pos[id] = { x: pos[p].x + (j - (ids.length - 1) / 2) * W_LEAF, y: Y_LEAF }; });
+  });
+
+  if (visible.includes("Internet")) {
+    pos["Internet"] = { x: pos[parentOf["Internet"]].x, y: Y_INTERNET };
+  }
+
+  const nodes = visible.map(id => {
+    const blue = isParent(id);
+    const inet = id === "Internet";
+    const down = details.devByName[lc(id)]?.up === 0;
+    const label = id + (blue ? (collapsed.has(id) ? "  [+]" : "  [-]") : "");
+    return {
+      id,
+      label,
+      down,
+      x: pos[id].x,
+      y: pos[id].y,
+      image: icon(kindOf(id)),
+      color: { border: down ? (blinkOn ? COL_DOWN : COL_DOWN_DIM) : inet ? COL_INTERNET : blue ? COL_PARENT : COL_LEAF, background: "#1b1e24" },
+      borderWidth: down ? 5 : inet ? 4 : 3
+    };
+  });
+
+  const edges = visEdges.map(e => ({
+    from: e.from,
+    to: e.to,
+    label: e.typ,
+    color: { color: EDGE_COLORS[e.typ] || "#888" },
+    arrows: { to: { enabled: true, scaleFactor: 0.6 }, from: { enabled: true, scaleFactor: 0.6 } }
+  }));
+
+  nodesDS.clear(); edgesDS.clear();
+  nodesDS.add(nodes);
+  edgesDS.add(edges);
+  network.fit();
+}
+
+setInterval(() => {
+  blinkOn = !blinkOn;
+  const downNodes = nodesDS.get().filter(n => n.down);
+  if (downNodes.length) nodesDS.update(downNodes.map(n => ({ id: n.id, color: { border: blinkOn ? COL_DOWN : COL_DOWN_DIM, background: "#1b1e24" } })));
+}, 500);
+
+let popupOpen = false;
+network.on("hoverNode", params => {
+  if (popupOpen) showPopup(params.node);
+});
+
+network.on("click", params => {
+  try {
+    if (params.nodes.length === 0) { hidePopup(); return; }
+    const id = params.nodes[0];
+    if (model.edges.some(e => e.from === id)) toggle(id); else showPopup(id);
+  } catch (err) {
+    document.getElementById("status").textContent = "Popup-Fehler: " + err.message;
+  }
+});
+
+document.getElementById("reload").addEventListener("click", loadTopology);
+loadTopology();
+setInterval(loadTopology, 5 * 60 * 1000);
+</script>
+</body>
+</html>
